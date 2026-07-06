@@ -1,23 +1,19 @@
-﻿'use client'
+'use client'
 import { useEffect } from 'react'
-import { useRouter, useSearchParams } from 'next/navigation'
+import { useRouter } from 'next/navigation'
+import { usersAPI } from '@/lib/api'
 
 export default function OAuthCallbackPage() {
   const router = useRouter()
-  const params = useSearchParams()
 
   useEffect(() => {
-    const accessToken = params.get('access_token')
-    const refreshToken = params.get('refresh_token')
-
-    if (accessToken && refreshToken) {
-      localStorage.setItem('access_token', accessToken)
-      localStorage.setItem('refresh_token', refreshToken)
-      router.replace('/feed')
-    } else {
-      router.replace('/login?error=oauth_failed')
-    }
-  }, [params, router])
+    // The backend already set the access_token/refresh_token httpOnly
+    // cookies before redirecting here, so there's nothing to read from the
+    // URL anymore. We just confirm the session is valid and move on.
+    usersAPI.getMe()
+      .then(() => router.replace('/feed'))
+      .catch(() => router.replace('/login?error=oauth_failed'))
+  }, [router])
 
   return (
     <div className="min-h-screen fomo-gradient flex items-center justify-center">

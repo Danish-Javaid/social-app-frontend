@@ -1,6 +1,7 @@
 ﻿'use client'
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
+import { usersAPI } from '@/lib/api'
 
 export default function SplashPage() {
   const router = useRouter()
@@ -18,8 +19,11 @@ export default function SplashPage() {
     }, 50)
 
     const timer = setTimeout(() => {
-      const token = typeof window !== 'undefined' ? localStorage.getItem('access_token') : null
-      router.push(token ? '/feed' : '/login')
+      // Tokens live in httpOnly cookies now, so ask the backend whether the
+      // current session is valid instead of reading localStorage.
+      usersAPI.getMe()
+        .then(() => router.push('/feed'))
+        .catch(() => router.push('/login'))
     }, 2600)
 
     return () => {

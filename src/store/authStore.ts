@@ -1,4 +1,4 @@
-﻿import { create } from 'zustand'
+import { create } from 'zustand'
 import { authAPI, usersAPI } from '@/lib/api'
 
 interface User {
@@ -30,9 +30,9 @@ export const useAuthStore = create<AuthStore>((set) => ({
   login: async (email, password) => {
     set({ isLoading: true, error: null })
     try {
-      const res = await authAPI.login(email, password)
-      localStorage.setItem('access_token', res.data.access_token)
-      localStorage.setItem('refresh_token', res.data.refresh_token)
+      // The backend sets access_token/refresh_token as httpOnly cookies on
+      // this response - nothing to store manually here anymore.
+      await authAPI.login(email, password)
       const meRes = await usersAPI.getMe()
       set({ user: meRes.data, isAuthenticated: true, isLoading: false })
     } catch (err: any) {
@@ -43,22 +43,16 @@ export const useAuthStore = create<AuthStore>((set) => ({
   },
 
   logout: async () => {
-    const refresh_token = localStorage.getItem('refresh_token') || ''
-    try { await authAPI.logout(refresh_token) } catch {}
-    localStorage.removeItem('access_token')
-    localStorage.removeItem('refresh_token')
+    try { await authAPI.logout() } catch {}
     set({ user: null, isAuthenticated: false })
   },
 
   fetchMe: async () => {
-    const token = localStorage.getItem('access_token')
-    if (!token) return
     try {
       const res = await usersAPI.getMe()
       set({ user: res.data, isAuthenticated: true })
     } catch {
-      localStorage.removeItem('access_token')
-      localStorage.removeItem('refresh_token')
+      set({ user: null, isAuthenticated: false })
     }
   },
 
