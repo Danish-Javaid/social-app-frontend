@@ -26,6 +26,18 @@ export function proxy(request: NextRequest) {
   const token = getTokenFromRequest(request, MIDDLEWARE_CONFIG.tokenCookieName)
   const isAuthenticated = hasValidTokenInRequest(request) && !isRequestTokenExpired(request)
 
+  // NEW: Handle root path based on auth status.
+  // If user is authenticated, skip the splash page and go straight to feed.
+  // If not authenticated, let splash page render (it will show the loading screen).
+  if (pathname === '/') {
+    if (isAuthenticated) {
+      return NextResponse.redirect(new URL('/feed', request.url))
+    }
+    // Not authenticated: let the splash page render, which will then
+    // decide whether to show splash or redirect to login after checking auth.
+    return NextResponse.next()
+  }
+
   if (isProtectedRoute(pathname) && !isAuthenticated) {
     const loginUrl = new URL(MIDDLEWARE_CONFIG.loginRedirect, request.url)
     loginUrl.searchParams.set('redirect', pathname)
